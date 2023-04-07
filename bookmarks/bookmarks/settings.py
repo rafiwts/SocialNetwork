@@ -135,3 +135,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'dashboard' # url to use where contrib.auth.views.login has no 'next' parameter
 LOGIN_URL = 'login' # url when log-in is successful 
 LOGUT_URL = 'logout' # url after logging out
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
