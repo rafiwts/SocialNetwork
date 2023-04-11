@@ -3,3 +3,5 @@ __pycache__
 /Lib
 /Scripts
 .env
+/bookmarks/images/static
+bookmarklet_launcher.js
