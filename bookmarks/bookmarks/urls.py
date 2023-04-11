@@ -20,8 +20,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('account/', include('account.urls')),
+    path(r'admin/', admin.site.urls),
+    path(r'account/', include('account.urls')),
+    path(r'social-auth/', include('social_django.urls', namespace='social')),
+    path(r'images/', include(('images.urls', 'images'), namespace='images')),
 ]
 
 if settings.DEBUG:
