@@ -5,8 +5,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
-from .forms import LoginForm, UserRegistrationForm, UserEditForm, ProfileEditForm
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from .forms import LoginForm, UserRegistrationForm,\
+                   UserEditForm, ProfileEditForm
+from .models import Contact
 from .models import Profile
+from actions.utils import create_action
+from actions.models import Action
 
 
 def user_login(request):
@@ -35,9 +41,18 @@ def dashboard(request):
     """checking if a user is authorized. If so, the view from dashboard.html is displayed. If the 
     user is not logged in, he will be directed to the log-in site and then to the url he wanted access
     - a hidden type next is responsible for that"""
+    actions = Action.objects.exclude(user=request.user)
+    following_ids = request.user.following.values_list('id',
+                                                       flat=True)
+    if following_ids:
+        actions = actions.filter(user_id__in=following_ids)
+    actions = actions.select_related('user', 'user__profile')\
+                     .prefetch_related('target')[:10]
+    
     return render(request,
                   'account/dashboard.html',
-                  {'section': 'dashboard'})
+                  {'section': 'dashboard',
+                   'actions': actions})
 
 
 def register(request):
@@ -48,7 +63,7 @@ def register(request):
             new_user.set_password(user_form.cleaned_data['password'])
             new_user.save()
             profile = Profile.objects.create(user=new_user)
-
+            create_action(new_user, 'created an account')
             return render(request,
                           'account/register_done.html',
                           {'new_user': new_user})
@@ -104,4 +119,32 @@ def user_detail(request, username):
                   'account/user/detail.html',
                   {'section': 'people',
                    'user': user})
+
+
+@require_POST
+@login_required
+def user_follow(request):
+    user_id = request.POST.get('id')
+    action = request.POST.get('action')
+    if user_id and action:
+        try:
+            user = User.objects.get(id=user_id)
+            if action == 'follow':
+                Contact.objects.get_or_create(
+                    user_from=request.user,
+                    user_to=user)
+                create_action(request.user, 'is following', user)
+            else:
+                Contact.objects.filter(user_from=request.user,
+                                       user_to=user).delete()
+            return JsonResponse({'status': 'ok'})
+        except User.DoesNotExist:
+            return JsonResponse({'status': 'error'})
+    return JsonResponse({'status': 'error'})
     
+
+@login_required
+def my_blog(request):
+    return render(request,
+                  'account/my_blog.html',
+                  {'section':'my_blog'})
