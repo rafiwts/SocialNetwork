@@ -1,7 +1,6 @@
 # created by virtualenv automatically
 __pycache__
-/Lib
-/Scripts
+/.venv
 .env
 /bookmarks/images/static
 bookmarklet_launcher.js
